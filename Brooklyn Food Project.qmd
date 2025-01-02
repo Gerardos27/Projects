@@ -1,0 +1,172 @@
+---
+title: "Brookyln Restaurant Inspection"
+author: "Gerardo Sandoval"
+format: html
+editor: visual
+---
+
+![Photo: Ahmed Gaber (NYC Tourism)](archive/images/Downtown-Brooklyn-NYC-Photo-Ahmed-Gaber-133-v2.jpg)
+
+## Introduction
+
+For my final project, I will be using the Brooklyn, New York Restaurant Inspection Results data set. This data set includes inspection results for 81,198 restaurants in Brooklyn, covering the period from 2016 to March 2022. The dataset contains the following 10 variables:
+
+-   **CAMIS** (Unique ID)
+
+-   **DBA** (Restaurant Name)
+
+-   **BORO** (City)
+
+-   **Street**
+
+-   **Cuisine Description**
+
+-   **Inspection Date**
+
+-   **Score**
+
+-   **Latitude**
+
+-   **Longitude**
+
+-   **Year**
+
+These variables provide an opportunity for in-depth analysis of how they interact and impact each other.
+
+This data set is provided by the Department of Health and Mental Hygiene (DOHMH), which is responsible for inspecting these restaurants and assigning them health and safety scores. I chose this topic because New York is renowned for its diverse food and cultural offerings. Brooklyn, as one of the most popular cities in New York, presents an interesting case study. According to the article "Report: NYC Restaurant Health by Neighborhood" by RentHop, Brooklyn ranks second in restaurant health and safety. I wanted to explore the reasons behind this ranking.
+
+## Calling Packages and Dataset
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(leaflet)
+library(plotly)
+library(leaflegend)
+setwd("/Users/gerardosandoval/Downloads")
+brkln <- read_csv("Brookyln.csv")
+```
+
+## Cleaning Data
+
+```{r}
+names(brkln) <- tolower(names(brkln))
+names(brkln) <- gsub(" ", "_", names(brkln))
+```
+
+## Visualization One:
+
+New York is commonly known for its pizza, attracting tourists from around the world who are eager to try a slice from the many Italian restaurants in Brooklyn. For my first data visualization, I will create a map showing restaurants in Brooklyn, New York, along with their food inspection scores for the year 2022.
+
+## Filtering Pizza Restaurants to most recent year (2022)
+
+```{r}
+brkln2 <- brkln %>%
+  filter( year == "2022") %>% #filtering to 2022
+  filter( cuisine_description == "Pizza") #Filtering to only Pizza
+brkln2
+```
+
+## Cutting to Replace Numerical Scores to Letter Scores for Better Understanding:
+
+I will base my letter grades on the scoring system used by the Department of Health and Mental Hygiene. According to the source, grading follows the format below.
+
+-   "A score of less than 14 points on either initial or re-inspection results in an “A” grade
+
+-   On re-inspection, a score of 14-27 points means a restaurant receives both a “B” grade and a “Grade Pending” card
+
+-   On re-inspection, a score of 28 or more points means a restaurant receives both a “C” grade and a “Grade Pending” card"
+
+```{r}
+brkln2$score = cut(brkln2$score, 
+                      breaks = c(100,27,14, 0), 
+                      labels = c("A", "B", "C"),
+                      right = FALSE, 
+                      include.lowest = TRUE) #Setting score to respected letter grade
+brkln2
+```
+
+## Creating Popup for Map
+
+```{r}
+popupbr <- paste0(
+"<b>Restaurant Name: </b>", brkln2$dba, "<br>", 
+"<b>Street Location: </b>", brkln2$street, "<br>", 
+"<b>Score: </b>", brkln2$score, "<br>" #Adding Resturant Name, Location and, score to popup
+)
+```
+
+## Creating Map
+
+```{r}
+leaflet() |>
+  setView(lng = -73.96050, lat = 40.65872, zoom = 12) |>
+  addProviderTiles("Esri.WorldImagery") |>
+  addCircles(
+    data = brkln2,
+    radius = brkln2$latitude,
+    color = "orange", #using orange and yellow to resemble pizza
+    fillColor = "yellow",
+    fillOpacity = 2, 
+  popup = popupbr
+  ) 
+
+
+```
+
+Source: Department of Health and Mental Hygiene (DOHMH)
+
+The map above shows Brooklyn, New York, with all pizza restaurants highlighted in orange circles. The pop-up for each circle displays the restaurant's name, street location, and its health inspection score converted from a numerical score to a letter grade for easier understanding. All scores are based on the latest year in the data set (2022).
+
+The first thing I noticed from this visualization is that there are many pizza restaurants in Brooklyn. Secondly, I observed that the closer the restaurants are to each other, the more likely they are to have a lower score. Although I am not sure of the reason, I would guess that these restaurants are in crowded, highly populated areas where maintaining cleanliness is more challenging.
+
+## Visualization Two:
+
+For my second visualization, I will use Tableau to display the average score for each type of cuisine from 2016 to 2022. This visualization will provide a clear view of which cuisines consistently pass or fail health inspections.
+
+Before creating this visualization, I researched possible results. I found an article from TIME stating that when the U.S. Congress passed the Immigration and Naturalization Act of 1965, many Chinese immigrants moved to America and opened low-budget restaurants. Due to their low budgets, these restaurants were perceived as unsanitary and more suitable for a quick bite, similar to modern fast food restaurants. One of my main purposes for selecting this type of visualization was to see if the sanitation practices in Chinese cuisine have changed since this long-standing stereotype.
+
+An average score below 14 indicates that the cuisine tends to pass the inspection with an A. An average score between 14 and 27 indicates that the cuisine tends to receive a B over the 6-year period. An average score of 28 or higher indicates that the cuisine averages a C over the 6-year period.
+
+[![\<https://public.tableau.com/views/FinalProject_gs/FinalProject?:language=en-US&publish=yes&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link\>](images/Screenshot%202024-07-07%20at%2012.31.33%20PM.png)](https://public.tableau.com/views/FinalProject_17203701742840/FinalProject?:language=en-US&publish=yes&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
+
+------------------------------------------------------------------------
+
+To begin this visualization, I placed the Score into the Columns and Cuisine Description into the Rows. These were the two variables needed to show the average score for each cuisine. Initially, the bar graph displayed the total score for each cuisine, so I had to change the score aggregation from Sum to Average. Once I achieved the correct display, I focused on making the visualization more visually appealing. I added Cuisine Description to the Marks card to assign a unique color to each cuisine. I then added a title and labeled the x-axis and y-axis. Next, I customized the tooltip so that when users hover over each bar, they can see the average score and understand where the score falls on the grading scale.
+
+I chose this visualization because it clearly highlights which cuisines people should likely avoid when visiting Brooklyn. I also noticed that less commonly eaten cuisines tend to have lower scores. This visualization will encourage viewers to try less common cuisines, such as English, Cajun, and Egyptian, for their good sanitation. It was no surprise to me that hotdog and pretzel stands had a high average score because these are typically outdoor food stands, making it difficult to maintain cleanliness. I also noticed that European cuisines had lower scores. This makes me wonder if these scores reflect different cleanliness standards, with European cuisines potentially being held to higher standards than American ones.
+
+## Linear Regression:
+
+```{r}
+ggplot(brkln, aes(x = latitude, y = score)) +
+  labs(title = "The Impact Location has on Score") +
+  xlab("Location") +
+  ylab("Score") + 
+  geom_point (color = "pink") +
+  geom_smooth(color = "yellow") +
+  theme_dark(base_size = 12)
+```
+
+```{r}
+lin_reg <- lm(latitude ~ score, data = brkln)
+summary(lin_reg)
+```
+
+## What does this tell us?
+
+Equation = y + .0040
+
+P-Value = .0000002521 It states that since it is very low it is possibly statistically significant
+
+Adjusted R-squared: 0.000331 It states that the model explains about 0.031% of the variation in the observations.
+
+## Bibliography
+
+“Downtown Brooklyn.” *New York City Tourism + Conventions*, www.nyctourism.com/new-york/brooklyn/downtown-brooklyn/. Accessed 7 July 2024. 
+
+Lee, Shane. “Report: NYC Restaurant Health by Neighborhood.” *Real Estate Data & Research*, 2 Aug. 2023, www.renthop.com/research/restaurant-health-code-violations-skyrocket-across-nyc/#:\~:text=Here%20are%20our%20key%20findings,121%2C%20graded%20B%20or%20C. 
+
+Department of Health and Mental Hygiene (DOHMH). “Dohmh New York City Restaurant Inspection Results: NYC Open Data.” *DOHMH New York City Restaurant Inspection Results \| NYC Open Data*, 6 July 2024, data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/43nn-pn8j/about_data. 
+
+Chow, Andrew R., and Suyin Haynes. “How Chinese Food Became a Lightning Rod for Controversy.” *Time*, Time, 8 July 2019, time.com/5620471/chinese-food-cultural-appropriation/. 
